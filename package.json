@@ -1,0 +1,18 @@
+{
+  "name": "aurelia-lib-factory",
+  "version": "1.0.0",
+  "description": "Clone and build individual aurelia modules",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shuhel Ahmed <Shuhel Ahmed>",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^2.9.34",
+    "hw-logger": "^1.1.9",
+    "jspm": "^0.16.2",
+    "nodegit": "^0.4.1",
+    "npm": "^2.14.1"
+  }
+}
