@@ -3,6 +3,7 @@ var clone = require('nodegit').Clone.clone;
 var logger = require('hw-logger');
 var log = logger.log;
 var jspm = require('jspm');
+var gulp = require('gulp');
 
 logger.init({
   colors: true
@@ -24,26 +25,46 @@ var repoNames = [
   'framework'
 ];
 
+var tasks = [];
+
+repoNames
+  .forEach(function(repoName) {
+    tasks.push(doRepo(repoName));
+  });
 
 
-doRepo('path');
+Promise.all(tasks)
+  .then(function() {
+    log.info('Successfully built the following repos: ', repoNames);
+  }).catch(function(err) {
+    log.error(err);
+  })
 
 function doRepo(repoName) {
   var repoPath = libPath + repoName;
 
-  cloneRepo(repoName, repoPath)
-    .then(function(){
-       return getNPMDependencies(repoPath);
+  // If the repo alrady exists locally:
+  // - Hard reset
+  // - Pull/Checkout latest
+  // Other wise Clone.
+
+  return cloneRepo(repoName, repoPath)
+    .then(function() {
+      return getNPMDependencies(repoPath);
     })
     .then(function(npmDeps) {
       return npmInstall(repoPath, npmDeps);
     })
     .then(function() {
-      return jspmInstall(repoPath); 
+      return jspmInstall(repoPath);
     })
-    .catch(function(err) {
-      log.error(err);
+    .then(function() {
+      return runGulpBuild();
     });
+}
+
+function runGulpBuild() {
+  return Promise.resolve();
 }
 
 function getNPMDependencies(repoPath) {
