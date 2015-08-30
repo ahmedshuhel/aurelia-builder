@@ -25,20 +25,25 @@ var repoNames = [
   'framework'
 ];
 
-var tasks = [];
+function buildAll() {
+  var tasks = [];
 
-repoNames
-  .forEach(function(repoName) {
-    tasks.push(doRepo(repoName));
-  });
+  repoNames
+    .forEach(function(repoName) {
+      tasks.push(doRepo(repoName));
+    });
 
+  return Promise.all(tasks);
+}
 
-Promise.all(tasks)
+/*
+buildAll()
   .then(function() {
     log.info('Successfully built the following repos: ', repoNames);
   }).catch(function(err) {
     log.error(err);
-  })
+  });
+*/
 
 function doRepo(repoName) {
   var repoPath = libPath + repoName;
@@ -46,7 +51,7 @@ function doRepo(repoName) {
   // If the repo alrady exists locally:
   // - Hard reset
   // - Pull/Checkout latest
-  // Other wise Clone.
+  // - Other wise Clone.
 
   return cloneRepo(repoName, repoPath)
     .then(function() {
@@ -63,7 +68,9 @@ function doRepo(repoName) {
     });
 }
 
-function runGulpBuild() {
+function runGulpBuild(repoPath) {
+  var gulp = repoPath + '/node_modules/gulp/bin/gulp.js';
+
   return Promise.resolve();
 }
 
