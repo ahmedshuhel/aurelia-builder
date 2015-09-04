@@ -1,13 +1,15 @@
+var Promise = require('bluebird');
 var logger = require('hw-logger');
 var builder = require('./builder');
 
+Promise.longStackTraces();
 
 var log = logger.log;
 var baseUrl = "https://github.com/aurelia";
-var localLibFolder = "../aurelia-libs/";
+var baseDir = "../";
 var repoNames = [
   'http-client',
-  'bootstrapper',
+  'path',
 ];
 
 logger.init({
@@ -15,9 +17,13 @@ logger.init({
 });
 
 
-builder.buildAll(repoNames, baseUrl, localLibFolder)
+
+builder
+   .buildAll(repoNames, baseUrl, baseDir)
   .then(function() {
-    log.info('Successfully built the following repos: ', repoNames);
-  }).catch(function(err) {
-    log.error(err);
+    repoNames.forEach(function(repo) {
+      builder.updateOwnDep(repo, baseDir);
+    });
+
+    log.info('Successfully built the following repos: %s', repoNames);
   });
