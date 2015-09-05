@@ -6,24 +6,50 @@ Promise.longStackTraces();
 
 var log = logger.log;
 var baseUrl = "https://github.com/aurelia";
-var baseDir = "../";
+var baseDir = "../aurelia-libs/";
 var repoNames = [
   'http-client',
   'path',
+  'bootstrapper'
 ];
 
 logger.init({
   colors: true
 });
 
-
+/*
 
 builder
-   .buildAll(repoNames, baseUrl, baseDir)
+  .buildAll(repoNames, baseUrl, baseDir)
   .then(function() {
+    var tasks = [];
     repoNames.forEach(function(repo) {
-      builder.updateOwnDep(repo, baseDir);
+      tasks.push(builder.updateOwnDep(repo, baseDir));
     });
 
-    log.info('Successfully built the following repos: %s', repoNames);
+    return Promise.all(tasks);
+  })
+  .then(function() {
+    log.info('Yey!')
   });
+
+
+
+builder.runGulpBuild('../aurelia-libs/path/', 'path')
+  .then(function(){
+    log.info('Yey!');
+  })
+
+ */
+
+builder
+  .buildRepo('bootstrapper', baseUrl, baseDir)
+  .then(function() {
+    return builder.updateOwnDep('bootstrapper', baseDir)
+  })
+  .then(function() {
+    log.info('Yey!')
+  })
+  .catch(function(err){
+    log.error(err);
+  })

@@ -1,3 +1,4 @@
+var npmi = require('npmi');
 var path = require('path');
 var npm = require('npm');
 var Promise = require('bluebird');
@@ -6,11 +7,14 @@ var fs = require('fs');
 var spawn = require('child-process-promise').spawn;
 var NodeGit = require('nodegit');
 
+////////////////////////
+
 var log = logger.log;
 var Clone = NodeGit.Clone;
 var Repository = NodeGit.Repository;
 var Reset = NodeGit.Reset;
 
+////CONFIGURE MODULE/////
 logger.init({
   colors: true
 });
@@ -41,6 +45,21 @@ npm.on("log", function(message) {
   log.info(message);
 });
 
+///////////////////////////
+
+module.exports = {
+  buildAll: buildAll,
+  buildRepo: buildRepo,
+  updateRepo: updateRepo,
+  npmInstall: npmInstall,
+  jspmInstall: jspmInstall,
+  cloneRepo: cloneRepo,
+  getNPMDependencies: getNPMDependencies,
+  getJSPMDependencies: getJSPMDependencies,
+  runGulpBuild: runGulpBuild,
+  updateOwnDep: updateOwnDep
+};
+
 
 function buildAll(repoNames, baseUrl, baseDir) {
   log.info('Building ', repoNames);
@@ -62,7 +81,7 @@ function existsAsync(path) {
 }
 
 function buildRepo(repoName, baseUrl, baseDir) {
-  log.info('Building ', repoName);
+  log.info('Building %s', repoName);
 
   var repoPath = baseDir + repoName;
 
@@ -75,10 +94,7 @@ function buildRepo(repoName, baseUrl, baseDir) {
       }
     })
     .then(function() {
-      return getNPMDependencies(repoPath, repoName);
-    })
-    .then(function(npmDeps) {
-      return npmInstall(repoPath, npmDeps, repoName);
+      return npmInstall(repoPath, repoName);
     })
     .then(function() {
       return jspmInstall(repoPath, repoName);
@@ -89,7 +105,7 @@ function buildRepo(repoName, baseUrl, baseDir) {
 }
 
 function runGulpBuild(repoPath, repoName) {
-  log.info('Building ' + repoName + ' ...');
+  log.info('Gulp is building ' + repoName + ' ...');
 
   var cmd = process.platform === 'win32' ? 'gulp.cmd' : 'gulp';
   var gulp = path.resolve(repoPath, 'node_modules', '.bin', cmd);
@@ -107,7 +123,7 @@ function runGulpBuild(repoPath, repoName) {
 }
 
 function getNPMDependencies(repoPath, repoName) {
-  log.info("Extracting NPM dependencies '%s' ...", repoName);
+  log.info("Extracting NPM dependencies for '" + repoName + "' ...");
 
   var pkg = require(repoPath + '/package.json');
   var allDeps = [];
@@ -115,30 +131,43 @@ function getNPMDependencies(repoPath, repoName) {
   var deps = pkg.dependencies || {};
 
   Object.keys(devDeps).forEach(function(key) {
-    var dep = key + '@' + devDeps[key];
-    allDeps.push(dep);
+    allDeps.push({
+      pkg: key,
+      ver: devDeps[key]
+    });
   });
 
   Object.keys(deps).forEach(function(key) {
-    var dep = key + '@' + deps[key];
-    allDeps.push(dep);
+    allDeps.push({
+      pkg: key,
+      ver: deps[key]
+    });
   });
 
   return Promise.resolve(allDeps);
 }
 
-function getAureliaDependencies(repoPath, repoName) {
-  log.info("Extracting Aurelia dependencies for '%s' ...", repoName);
+function getJSPMDependencies(repoPath, repoName) {
+  log.info("Extracting Aurelia dependencies for " + repoName + " ...");
 
   var pkg = require(repoPath + '/package.json');
-  var aureliaDeps = [];
+  var allDeps = [];
 
   var deps = pkg.jspm.dependencies || {};
+  var devDeps = pkg.jspm.dependencies || {};
+
   Object.keys(deps).forEach(function(key) {
-    var dep = key;
-    if (key.startsWith('aurelia')) {
-      aureliaDeps.push(dep);
-    }
+     allDeps.push({
+       name: key,
+       fullName: deps[key]
+     });
+  });
+
+  Object.keys(devDeps).forEach(function(key) {
+     allDeps.push({
+       name: key,
+       fullName: deps[key]
+     });
   });
 
   return Promise.resolve(aureliaDeps);
@@ -168,61 +197,91 @@ function updateRepo(repoName, baseUrl, repoPath) {
 }
 
 
-function npmInstall(repoPath, packages, repoName) {
+function installNPMpackage(installPath, name, version) {
 
-  var npm = process.platform === 'win32' ? 'gulp.cmd' : 'gulp';
+  var absInstallPath = path.resolve(installPath);
+  var nodeModulesFolder = absInstallPath + path.sep + 'node_modules';
+  var packagePath = absInstallPath + path.sep + 'node_modules' + path.sep + name;
 
-  var gulp = path.resolve(repoPath, 'node_modules', '.bin', cmd);
-  var gulpfile = path.resolve(repoPath, 'gulpfile.js');
+  var options = {
+    name: name,
+    version: version,
+    path: absInstallPath,
+    forceInstall: false,
+    npmLoad: {
+      loglevel: 'silent' // [default: {loglevel: 'silent'}]
+    }
+  };
 
-  return spawn(gulp, ['--gulpfile', gulpfile, 'build'])
-    .progress(function(cp) {
-      cp.stdout.on('data', function(data) {
-        log.info(data.toString());
-      });
-      cp.stderr.on('data', function(data) {
-        log.warn(data.toString());
-      });
-    });
-}
-
-/*
-function npmInstall(repoPath, packages, repoName) {
-  log.info('Installing node modules for ' + repoName + ' ...');
-
-  return new Promise(function(resolve, reject) {
-
-    npm.load({cwd: path.resolve(repoPath)}, function(err, _npm) {
-      if (err) {
-        reject(err);
+  return existsAsync(packagePath)
+    .then(function(exists) {
+      if (exists) {
+        return Promise.resolve(options.name + 'is already installed');
       } else {
-        _npm.commands.install(['.'], function(er, data) {
-          if (er !== undefined && er !== null) {
-            reject(er);
-          } else {
-            resolve(data);
-          }
-        });
+
+        return doNpmi();
       }
     });
-  });
+
+  function doNpmi() {
+    return new Promise(function(resolve, reject) {
+      npmi(options, function(err, result) {
+
+        if (err) {
+          log.error('Error occured while installing %s@%s :  %s', name, installPath, err);
+
+          if (err.code === npmi.LOAD_ERR) reject('npm load error');
+          else if (err.code === npmi.INSTALL_ERR) reject('npm install error');
+        }
+
+        resolve('installed ' + options.name + '@' + options.version);
+
+      });
+    });
+
+  }
 }
-*/
+
+
+function npmInstall(repoPath, repoName) {
+  log.info('Installing node modules for ' + repoName + ' ...');
+
+  return getNPMDependencies(repoPath, repoName)
+    .then(function(deps) {
+      var tasks = [];
+
+      deps.forEach(function(dep) {
+        tasks.push(installNPMpackage(repoPath, dep.pkg, dep.ver));
+      });
+
+      return Promise.all(tasks);
+    });
+}
+
 
 function jspmInstall(repoPath, repoName) {
   log.info('Installing JSPM packages for ' + repoName + '...');
 
-  var jspm = require('jspm');
-  jspm.setPackagePath(repoPath);
+  return getJSPMDependencies(repoPath, repoName)
+     .then(function(deps){
+        
+        
+          
+     })
 
+  delete require.cache[require.resolve('jspm')];
+  var jspm = require('jspm');
+
+  jspm.setPackagePath(repoPath);
   return jspm.install(true, {
-    lock: true
+    lock: true,
+    force: false
   });
 }
 
 function updateOwnDep(repoName, baseDir) {
 
-  log.info('Updating aurelia dependency for %s', repoName);
+  log.info('Updating aurelia dependency for ' + repoName);
 
   var dependencyPath = path.resolve(baseDir, 'repoName', 'jspm_packages', 'github', 'aurelia');
   var baseDir = path.resolve(baseDir);
@@ -241,6 +300,9 @@ function updateOwnDep(repoName, baseDir) {
         copyDir(value[0], value[1]);
       }
     });
+
+  log.info('Updated aurelia dependency for %s', repoName);
+  return Promise.resolve();
 }
 
 
@@ -268,18 +330,4 @@ function copy(src, dest) {
   var oldFile = fs.createReadStream(src);
   var newFile = fs.createWriteStream(dest);
   oldFile.pipe(newFile);
-};
-
-
-module.exports = {
-  buildAll: buildAll,
-  buildRepo: buildRepo,
-  updateRepo: updateRepo,
-  npmInstall: npmInstall,
-  jspmInstall: jspmInstall,
-  cloneRepo: cloneRepo,
-  getNPMDependencies: getNPMDependencies,
-  getAureliaDependencies: getAureliaDependencies,
-  runGulpBuild: runGulpBuild,
-  updateOwnDep: updateOwnDep
 };
