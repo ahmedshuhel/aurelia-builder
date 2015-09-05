@@ -294,6 +294,26 @@ function installJSPMPackage(repoPath, name, fullName) {
 
     jspm.setPackagePath(repoPath);
     return jspm.install(name, fullName);
+
+
+  log.info('Gulp is building ' + repoName + ' ...');
+
+  var cmd = process.platform === 'win32' ? 'jspm.cmd' : 'jspm';
+
+  var gulp = path.resolve(repoPath, 'node_modules', '.bin', cmd);
+  var gulpfile = path.resolve(repoPath, 'gulpfile.js');
+
+  return spawn(gulp, ['--gulpfile', gulpfile, 'build'])
+    .progress(function(cp) {
+      cp.stdout.on('data', function(data) {
+        log.info(data.toString());
+      });
+      cp.stderr.on('data', function(data) {
+        log.warn(data.toString());
+      });
+    });
+
+
   }
 }
 
@@ -302,6 +322,7 @@ function updateOwnDep(repoName, baseDir) {
   log.info('Updating aurelia dependency for ' + repoName);
 
   var dependencyPath = path.resolve(baseDir, repoName, 'jspm_packages', 'github', 'aurelia');
+
   var baseDir = path.resolve(baseDir);
 
   fs.readdirSync(dependencyPath)
@@ -314,6 +335,8 @@ function updateOwnDep(repoName, baseDir) {
         dependencyPath + path.sep + name.substring(0, name.indexOf('.js'))
       ];
     }).forEach(function(value) {
+
+      log.info(value);
       if (fs.existsSync(value[0])) {
         copyDir(value[0], value[1]);
       }
@@ -323,6 +346,15 @@ function updateOwnDep(repoName, baseDir) {
   return Promise.resolve();
 }
 
+function mkdir(dir) {
+  try {
+    fs.mkdirSync(dir, 0755);
+  } catch(e) {
+    if(e.code != "EEXIST") {
+      throw e;
+    }
+  }
+};
 
 function copyDir(src, dest) {
   try {
