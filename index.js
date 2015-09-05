@@ -6,8 +6,9 @@ Promise.longStackTraces();
 
 var log = logger.log;
 var baseUrl = "https://github.com/aurelia";
-var baseDir = "../aurelia-libs/";
+var baseDir = "../";
 var repoNames = [
+  'templating-router',
   'http-client',
   'path',
   'bootstrapper'
@@ -43,9 +44,9 @@ builder.runGulpBuild('../aurelia-libs/path/', 'path')
  */
 
 builder
-  .buildRepo('bootstrapper', baseUrl, baseDir)
+  .buildRepo('templating-router', baseUrl, baseDir)
   .then(function() {
-    return builder.updateOwnDep('bootstrapper', baseDir)
+    return builder.updateOwnDep('templating-router', baseDir)
   })
   .then(function() {
     log.info('Yey!')

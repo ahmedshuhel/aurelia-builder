@@ -1,7 +1,7 @@
 {
-  "name": "aurelia-lib-factory",
+  "name": "aurelia-builder",
   "version": "1.0.0",
-  "description": "Clone and build individual aurelia modules",
+  "description": "Clone and build aurelia modules locally",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

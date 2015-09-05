@@ -157,20 +157,20 @@ function getJSPMDependencies(repoPath, repoName) {
   var devDeps = pkg.jspm.dependencies || {};
 
   Object.keys(deps).forEach(function(key) {
-     allDeps.push({
-       name: key,
-       fullName: deps[key]
-     });
+    allDeps.push({
+      name: key,
+      fullName: deps[key]
+    });
   });
 
   Object.keys(devDeps).forEach(function(key) {
-     allDeps.push({
-       name: key,
-       fullName: deps[key]
-     });
+    allDeps.push({
+      name: key,
+      fullName: deps[key]
+    });
   });
 
-  return Promise.resolve(aureliaDeps);
+  return Promise.resolve(allDeps);
 }
 
 
@@ -263,27 +263,45 @@ function jspmInstall(repoPath, repoName) {
   log.info('Installing JSPM packages for ' + repoName + '...');
 
   return getJSPMDependencies(repoPath, repoName)
-     .then(function(deps){
-        
-        
-          
-     })
+    .then(function(deps) {
+      var tasks = [];
+      deps.forEach(function(dep) {
+        tasks.push(installJSPMPackage(repoPath, dep.name, dep.fullName));
+      });
+      return Promise.all(tasks);
+    });
+}
 
-  delete require.cache[require.resolve('jspm')];
-  var jspm = require('jspm');
+function installJSPMPackage(repoPath, name, fullName) {
+  var subFolder = fullName.substring(0, fullName.indexOf(':'));
+  var pkgName =  fullName.substring(fullName.indexOf(':') + 1);
+  var pkgPath = path.join(path.resolve(repoPath), 'jspm_packages', subFolder, pkgName.replace(/\//g, path.sep)).replace(/\^/g, '') + '.js'; 
 
-  jspm.setPackagePath(repoPath);
-  return jspm.install(true, {
-    lock: true,
-    force: false
-  });
+  return existsAsync(pkgPath)
+    .then(function(exists){
+       if(exists){
+         return Promise.resolve();
+       } else {
+         return doInstall();
+       }
+    });
+
+  function doInstall() {
+    log.info('Installing %s', fullName);
+
+    delete require.cache[require.resolve('jspm')];
+    var jspm = require('jspm');
+
+    jspm.setPackagePath(repoPath);
+    return jspm.install(name, fullName);
+  }
 }
 
 function updateOwnDep(repoName, baseDir) {
 
   log.info('Updating aurelia dependency for ' + repoName);
 
-  var dependencyPath = path.resolve(baseDir, 'repoName', 'jspm_packages', 'github', 'aurelia');
+  var dependencyPath = path.resolve(baseDir, repoName, 'jspm_packages', 'github', 'aurelia');
   var baseDir = path.resolve(baseDir);
 
   fs.readdirSync(dependencyPath)
