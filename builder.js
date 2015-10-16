@@ -5,14 +5,11 @@ var Promise = require('bluebird');
 var logger = require('hw-logger');
 var fs = require('fs');
 var spawn = require('child-process-promise').spawn;
-var NodeGit = require('nodegit');
+var git = require('./git');
 
 ////////////////////////
 
 var log = logger.log;
-var Clone = NodeGit.Clone;
-var Repository = NodeGit.Repository;
-var Reset = NodeGit.Reset;
 
 ////CONFIGURE MODULE/////
 logger.init({
@@ -93,6 +90,7 @@ function buildRepo(repoName, baseUrl, baseDir) {
         return updateRepo(repoName, baseUrl, repoPath);
       }
     })
+    /*
     .then(function() {
       return npmInstall(repoPath, repoName);
     })
@@ -102,6 +100,7 @@ function buildRepo(repoName, baseUrl, baseDir) {
     .then(function() {
       return runGulpBuild(repoPath, repoName);
     });
+   */
 }
 
 function runGulpBuild(repoPath, repoName) {
@@ -174,28 +173,6 @@ function getJSPMDependencies(repoPath, repoName) {
 }
 
 
-function cloneRepo(repoName, baseUrl, repoPath) {
-  log.info("Cloneing '" + repoName + "' ...");
-  return Clone.clone(baseUrl + "/" + repoName, repoPath, null);
-}
-
-function updateRepo(repoName, baseUrl, repoPath) {
-  var repository;
-  log.info("Updating '" + repoName + "' ...");
-
-  return Repository.open(repoPath)
-    .then(function(repo) {
-      repository = repo;
-      return repository.fetch('origin', credCb);
-    })
-    .then(function() {
-      return repository.getBranchCommit('origin/master');
-    })
-    .then(function(originMaster) {
-      return Reset.reset(repository, originMaster, Reset.TYPE.HARD);
-    });
-}
-
 
 function installNPMpackage(installPath, name, version) {
 
@@ -218,7 +195,6 @@ function installNPMpackage(installPath, name, version) {
       if (exists) {
         return Promise.resolve(options.name + 'is already installed');
       } else {
-
         return doNpmi();
       }
     });
@@ -274,16 +250,16 @@ function jspmInstall(repoPath, repoName) {
 
 function installJSPMPackage(repoPath, name, fullName) {
   var subFolder = fullName.substring(0, fullName.indexOf(':'));
-  var pkgName =  fullName.substring(fullName.indexOf(':') + 1);
-  var pkgPath = path.join(path.resolve(repoPath), 'jspm_packages', subFolder, pkgName.replace(/\//g, path.sep)).replace(/\^/g, '') + '.js'; 
+  var pkgName = fullName.substring(fullName.indexOf(':') + 1);
+  var pkgPath = path.join(path.resolve(repoPath), 'jspm_packages', subFolder, pkgName.replace(/\//g, path.sep)).replace(/\^/g, '') + '.js';
 
   return existsAsync(pkgPath)
-    .then(function(exists){
-       if(exists){
-         return Promise.resolve();
-       } else {
-         return doInstall();
-       }
+    .then(function(exists) {
+      if (exists) {
+        return Promise.resolve();
+      } else {
+        return doInstall();
+      }
     });
 
   function doInstall() {
@@ -296,24 +272,22 @@ function installJSPMPackage(repoPath, name, fullName) {
     return jspm.install(name, fullName);
 
 
-  log.info('Gulp is building ' + repoName + ' ...');
+    log.info('Gulp is building ' + repoName + ' ...');
 
-  var cmd = process.platform === 'win32' ? 'jspm.cmd' : 'jspm';
+    var cmd = process.platform === 'win32' ? 'jspm.cmd' : 'jspm';
 
-  var gulp = path.resolve(repoPath, 'node_modules', '.bin', cmd);
-  var gulpfile = path.resolve(repoPath, 'gulpfile.js');
+    var gulp = path.resolve(repoPath, 'node_modules', '.bin', cmd);
+    var gulpfile = path.resolve(repoPath, 'gulpfile.js');
 
-  return spawn(gulp, ['--gulpfile', gulpfile, 'build'])
-    .progress(function(cp) {
-      cp.stdout.on('data', function(data) {
-        log.info(data.toString());
+    return spawn(gulp, ['--gulpfile', gulpfile, 'build'])
+      .progress(function(cp) {
+        cp.stdout.on('data', function(data) {
+          log.info(data.toString());
+        });
+        cp.stderr.on('data', function(data) {
+          log.warn(data.toString());
+        });
       });
-      cp.stderr.on('data', function(data) {
-        log.warn(data.toString());
-      });
-    });
-
-
   }
 }
 
@@ -349,8 +323,8 @@ function updateOwnDep(repoName, baseDir) {
 function mkdir(dir) {
   try {
     fs.mkdirSync(dir, 0755);
-  } catch(e) {
-    if(e.code != "EEXIST") {
+  } catch (e) {
+    if (e.code != "EEXIST") {
       throw e;
     }
   }

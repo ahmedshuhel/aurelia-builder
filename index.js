@@ -52,22 +52,3 @@ builder
     log.info('Now start jumping!! The mighty script is finished building...');
   });
 
-/*
-builder.runGulpBuild('../aurelia-libs/path/', 'path')
-  .then(function(){
-    log.info('Yey!');
-  })
-
-
-builder
-  .buildRepo('templating-router', baseUrl, baseDir)
-  .then(function() {
-    return builder.updateOwnDep('templating-router', baseDir)
-  })
-  .then(function() {
-    log.info('Yey!')
-  })
-  .catch(function(err){
-    log.error(err);
-  })
- */

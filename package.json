@@ -11,10 +11,10 @@
   "dependencies": {
     "bluebird": "^2.9.34",
     "child-process-promise": "^1.1.0",
+    "gitty": "^3.2.3",
     "gulp": "^3.9.0",
     "hw-logger": "^1.1.9",
     "jspm": "^0.16.2",
-    "nodegit": "^0.4.1",
     "npm": "^2.14.1",
     "npmi": "^1.0.1"
   }
