@@ -1,12 +1,12 @@
 var Promise = require('bluebird');
 var logger = require('hw-logger');
-var builder = require('./builder');
+//var builder = require('./builder');
+var git = require('./node-git');
 
-Promise.longStackTraces();
 
 var log = logger.log;
 var baseUrl = "https://github.com/aurelia";
-var baseDir = "../";
+var baseDir = "C:/Users/shuhel/Workspace/aurelia";
 var repoNames = [
   'templating',
   'templating-router',
@@ -39,6 +39,35 @@ logger.init({
   colors: true
 });
 
+
+var repo = git.openRepo('binding', baseDir);
+git.reset(repo)
+  .then(() => {
+    log.info('Now start jumping!! The mighty script is finished cloning...');
+  })
+  .catch((err) => {
+    log.error(err);
+  });
+
+  /*
+git.updateRepo('binding', baseUrl, baseDir)
+  .then(() => {
+    log.info('Now start jumping!! The mighty script is finished cloning...');
+  })
+  .catch((err) => {
+    log.error(err);
+  });
+ */
+
+/*
+git.clone('binding', baseUrl, `${baseDir}binding`)
+  .then(() => {
+    log.info('Now start jumping!! The mighty script is finished cloning...');
+  })
+  .catch((err) => {
+    log.error(err);
+  })
+
 builder
   .buildAll(repoNames, baseUrl, baseDir)
   .then(function() {
@@ -52,3 +81,4 @@ builder
     log.info('Now start jumping!! The mighty script is finished building...');
   });
 
+*/
