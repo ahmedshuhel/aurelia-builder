@@ -40,6 +40,16 @@ logger.init({
 });
 
 
+
+git.clone('bootstrapper', baseUrl, baseDir)
+  .then(() => {
+    log.info('Now start jumping!! The mighty script is finished cloning...');
+  })
+  .catch((err) => {
+    log.error(err);
+  })
+
+/*
 var repo = git.openRepo('binding', baseDir);
 git.reset(repo)
   .then(() => {
@@ -49,7 +59,7 @@ git.reset(repo)
     log.error(err);
   });
 
-  /*
+
 git.updateRepo('binding', baseUrl, baseDir)
   .then(() => {
     log.info('Now start jumping!! The mighty script is finished cloning...');
@@ -57,9 +67,7 @@ git.updateRepo('binding', baseUrl, baseDir)
   .catch((err) => {
     log.error(err);
   });
- */
 
-/*
 git.clone('binding', baseUrl, `${baseDir}binding`)
   .then(() => {
     log.info('Now start jumping!! The mighty script is finished cloning...');
