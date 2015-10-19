@@ -25,7 +25,7 @@ Repository.prototype.reset = function(hash, callback) {
   });
 }
 
-function clone(repoName, baseUrl, baseDir) {
+function cloneRepo(repoName, baseUrl, baseDir) {
   log.info("Cloneing '" + repoName + "' ...");
 
   var url = `${baseUrl}/${repoName}`;
@@ -87,7 +87,7 @@ function updateRepo(repoName, baseUrl, baseDir) {
 }
 
 module.exports = {
-  clone: clone,
+  cloneRepo: cloneRepo,
   updateRepo: updateRepo,
   pull: pull,
   reset: reset,

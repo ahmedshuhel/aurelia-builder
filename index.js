@@ -1,6 +1,6 @@
 var Promise = require('bluebird');
 var logger = require('hw-logger');
-//var builder = require('./builder');
+var builder = require('./builder');
 var git = require('./node-git');
 
 
@@ -32,7 +32,16 @@ var repoNames = [
   'dependency-injection',
   'metadata',
   'logging-console',
-  'logging'
+  'logging',
+  'dialog',
+  'i18n',
+  'ui-virtualization',
+  'validation',
+  'animator-velocity',
+  'animator-css',
+  'pal',
+  'pal-browser',
+  'pal-nodejs'
 ];
 
 logger.init({
@@ -40,42 +49,7 @@ logger.init({
 });
 
 
-
-git.clone('bootstrapper', baseUrl, baseDir)
-  .then(() => {
-    log.info('Now start jumping!! The mighty script is finished cloning...');
-  })
-  .catch((err) => {
-    log.error(err);
-  })
-
 /*
-var repo = git.openRepo('binding', baseDir);
-git.reset(repo)
-  .then(() => {
-    log.info('Now start jumping!! The mighty script is finished cloning...');
-  })
-  .catch((err) => {
-    log.error(err);
-  });
-
-
-git.updateRepo('binding', baseUrl, baseDir)
-  .then(() => {
-    log.info('Now start jumping!! The mighty script is finished cloning...');
-  })
-  .catch((err) => {
-    log.error(err);
-  });
-
-git.clone('binding', baseUrl, `${baseDir}binding`)
-  .then(() => {
-    log.info('Now start jumping!! The mighty script is finished cloning...');
-  })
-  .catch((err) => {
-    log.error(err);
-  })
-
 builder
   .buildAll(repoNames, baseUrl, baseDir)
   .then(function() {
@@ -88,5 +62,10 @@ builder
   .then(function() {
     log.info('Now start jumping!! The mighty script is finished building...');
   });
-
 */
+
+builder
+  .buildAll(repoNames, baseUrl, baseDir)
+  .then(function() {
+    log.info('Now start jumping!! The mighty script is finished building...');
+  });

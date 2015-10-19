@@ -5,7 +5,7 @@ var Promise = require('bluebird');
 var logger = require('hw-logger');
 var fs = require('fs');
 var spawn = require('child-process-promise').spawn;
-var git = require('./git');
+var git = require('./node-git');
 
 ////////////////////////
 
@@ -28,16 +28,6 @@ if (!('startsWith' in String.prototype)) {
   };
 }
 
-var credCb = {
-  credentials: function(url, userName) {
-    return NodeGit.Cred.sshKeyFromAgent(userName);
-  },
-  certificateCheck: function() {
-    return 1;
-  }
-};
-
-
 npm.on("log", function(message) {
   log.info(message);
 });
@@ -47,10 +37,8 @@ npm.on("log", function(message) {
 module.exports = {
   buildAll: buildAll,
   buildRepo: buildRepo,
-  updateRepo: updateRepo,
   npmInstall: npmInstall,
   jspmInstall: jspmInstall,
-  cloneRepo: cloneRepo,
   getNPMDependencies: getNPMDependencies,
   getJSPMDependencies: getJSPMDependencies,
   runGulpBuild: runGulpBuild,
@@ -80,16 +68,16 @@ function existsAsync(path) {
 function buildRepo(repoName, baseUrl, baseDir) {
   log.info('Building %s', repoName);
 
-  var repoPath = baseDir + repoName;
+  var repoPath = `${baseDir}/${repoName}`;
 
   return existsAsync(repoPath)
     .then(function(exists) {
       if (!exists) {
-        return cloneRepo(repoName, baseUrl, repoPath);
+        return git.cloneRepo(repoName, baseUrl, baseDir);
       } else {
-        return updateRepo(repoName, baseUrl, repoPath);
+        return git.updateRepo(repoName, baseUrl, baseDir);
       }
-    })
+    });
     /*
     .then(function() {
       return npmInstall(repoPath, repoName);
